@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Image Server</title>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script>
+</head>
+
+<body>
+    <h1>Image Server</h1>
+
+    <script>
+        document.addEventListener('paste', function (e) {
+            console.log(e)
+            e.preventDefault()
+            // Only chrome
+            if (!e.clipboardData.items) {
+                alert("Image paste only support Chrome")
+                return
+            }
+            var items = (e.clipboardData || e.originalEvent.clipboardData).items;
+
+            var blob = null;
+            for (let index = 0; index < items.length; index++) {
+                const item = items[index];
+                if (item.type.indexOf("image") === -1) {
+                    continue
+                }
+                var blob = item.getAsFile();
+            }
+            if (blob) {
+                console.log("blob:", blob)
+                var reader = new FileReader()
+                reader.onload = function (event) {
+                    console.log(event.target.result);
+                    var img = new Image()
+                    img.onload = function (v) {
+                        document.body.appendChild(img);
+                        console.log("size:", img.width, img.height);
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(blob);
+
+                var formData = new FormData()
+                formData.append("file", blob);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/ocr",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                }).done(function (ret) {
+                    console.log(ret.data);
+                    $("#result-img").attr("src", ret.data);
+                })
+            }
+        })
+    </script>
+</body>
+
+</html>
